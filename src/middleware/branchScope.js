@@ -19,7 +19,7 @@ const branchScopeMiddleware = (req, res, next) => {
       return res.status(403).json({
         success: false,
         message: 'Bạn chưa được gán chi nhánh',
-        timestamp: new Date().toISOString(),
+        error: 'No branch assigned',
       });
     }
     req.branchFilter = { branchId: req.user.branchId };

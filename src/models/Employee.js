@@ -10,17 +10,17 @@ const employeeSchema = new mongoose.Schema(
     },
     employeeCode: {
       type: String,
+      required: true,
       unique: true,
       trim: true,
     },
     fullName: {
       type: String,
-      required: [true, 'Họ tên là bắt buộc'],
       trim: true,
     },
     avatar: {
       type: String,
-      default: null,
+      default: '',
     },
     phone: {
       type: String,
@@ -47,16 +47,16 @@ const employeeSchema = new mongoose.Schema(
     branchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Branch',
-      default: null,
+      required: [true, 'Chi nhánh là bắt buộc'],
     },
     position: {
       type: String,
-      default: 'Nhân viên',
+      required: [true, 'Chức vụ là bắt buộc'],
       trim: true,
     },
     hourlyRate: {
       type: Number,
-      default: 0,
+      required: [true, 'Lương giờ là bắt buộc'],
       min: [0, 'Lương giờ không được âm'],
     },
     shiftId: {
@@ -70,8 +70,8 @@ const employeeSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'active', 'inactive', 'locked', 'resigned', 'rejected'],
-      default: 'pending',
+      enum: ['active', 'inactive', 'resigned', 'locked'],
+      default: 'active',
     },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -92,17 +92,7 @@ const employeeSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
 employeeSchema.index({ branchId: 1 });
 employeeSchema.index({ status: 1 });
-
-// Auto-generate employee code before save
-employeeSchema.pre('save', async function (next) {
-  if (!this.employeeCode) {
-    const count = await mongoose.model('Employee').countDocuments();
-    this.employeeCode = `NV${String(count + 1).padStart(5, '0')}`;
-  }
-  next();
-});
 
 export default mongoose.model('Employee', employeeSchema);
