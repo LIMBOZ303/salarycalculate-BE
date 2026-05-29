@@ -24,7 +24,7 @@ const shiftSchema = new mongoose.Schema(
     },
     graceMinutes: {
       type: Number,
-      default: 15,
+      default: 0,
       min: 0,
     },
     allowCheckInBeforeMinutes: {
@@ -34,7 +34,7 @@ const shiftSchema = new mongoose.Schema(
     },
     allowCheckOutAfterMinutes: {
       type: Number,
-      default: 30,
+      default: 60,
       min: 0,
     },
     isActive: {

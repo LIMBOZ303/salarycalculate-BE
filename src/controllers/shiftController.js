@@ -1,55 +1,124 @@
 import Shift from '../models/Shift.js';
-import {  successResponse, errorResponse  } from '../utils/response.js';
-import {  logAction  } from '../utils/auditLogger.js';
+import { successResponse, errorResponse } from '../utils/response.js';
 
-const getShifts = async (req, res, next) => {
+const blockEmployee = (req, res) => {
+  if (req.user.role === 'employee') {
+    errorResponse(res, 'Nhân viên không có quyền xem ca làm', 403, 'Forbidden');
+    return true;
+  }
+  return false;
+};
+
+export const getShifts = async (req, res) => {
   try {
+    if (blockEmployee(req, res)) return;
+
     const filter = {};
-    if (req.query.isActive) filter.isActive = req.query.isActive === 'true';
+    if (req.query.isActive !== undefined) {
+      filter.isActive = req.query.isActive === 'true';
+    }
+
     const shifts = await Shift.find(filter).sort({ startTime: 1 });
-    return successResponse(res, shifts, 'Lấy danh sách ca làm thành công');
-  } catch (error) { next(error); }
+    return successResponse(res, { shifts }, 'Lấy danh sách ca làm thành công');
+  } catch (error) {
+    return errorResponse(res, 'Lấy danh sách ca làm thất bại', 500, error.message);
+  }
 };
 
-const getShiftById = async (req, res, next) => {
+export const getShiftById = async (req, res) => {
+  try {
+    if (blockEmployee(req, res)) return;
+
+    const shift = await Shift.findById(req.params.id);
+    if (!shift) {
+      return errorResponse(res, 'Không tìm thấy ca làm', 404, 'Shift not found');
+    }
+    return successResponse(res, { shift }, 'Lấy ca làm thành công');
+  } catch (error) {
+    return errorResponse(res, 'Lấy ca làm thất bại', 500, error.message);
+  }
+};
+
+export const createShift = async (req, res) => {
+  try {
+    const {
+      name,
+      startTime,
+      endTime,
+      breakMinutes,
+      graceMinutes,
+      allowCheckInBeforeMinutes,
+      allowCheckOutAfterMinutes,
+    } = req.body;
+
+    if (!name || !startTime || !endTime) {
+      return errorResponse(
+        res,
+        'Vui lòng nhập tên ca, giờ bắt đầu và giờ kết thúc',
+        400,
+        'Validation failed'
+      );
+    }
+
+    const shift = await Shift.create({
+      name,
+      startTime,
+      endTime,
+      breakMinutes: breakMinutes ?? 0,
+      graceMinutes: graceMinutes ?? 0,
+      allowCheckInBeforeMinutes: allowCheckInBeforeMinutes ?? 30,
+      allowCheckOutAfterMinutes: allowCheckOutAfterMinutes ?? 60,
+    });
+
+    return successResponse(res, { shift }, 'Tạo ca làm thành công', 201);
+  } catch (error) {
+    return errorResponse(res, 'Tạo ca làm thất bại', 500, error.message);
+  }
+};
+
+export const updateShift = async (req, res) => {
   try {
     const shift = await Shift.findById(req.params.id);
-    if (!shift) return errorResponse(res, 'Không tìm thấy ca làm', 404);
-    return successResponse(res, shift);
-  } catch (error) { next(error); }
-};
+    if (!shift) {
+      return errorResponse(res, 'Không tìm thấy ca làm', 404, 'Shift not found');
+    }
 
-const createShift = async (req, res, next) => {
-  try {
-    const { name, startTime, endTime, breakMinutes, graceMinutes, allowCheckInBeforeMinutes, allowCheckOutAfterMinutes } = req.body;
-    if (!name || !startTime || !endTime) return errorResponse(res, 'Vui lòng điền: tên ca, giờ bắt đầu, giờ kết thúc', 400);
-    const shift = await Shift.create({ name, startTime, endTime, breakMinutes: breakMinutes || 0, graceMinutes: graceMinutes || 15, allowCheckInBeforeMinutes: allowCheckInBeforeMinutes || 30, allowCheckOutAfterMinutes: allowCheckOutAfterMinutes || 30 });
-    await logAction({ userId: req.user.id, role: req.user.role, action: 'CREATE', resource: 'Shift', resourceId: shift._id, newValue: { name, startTime, endTime }, req });
-    return successResponse(res, shift, 'Tạo ca làm thành công', 201);
-  } catch (error) { next(error); }
-};
+    const allowed = [
+      'name',
+      'startTime',
+      'endTime',
+      'breakMinutes',
+      'graceMinutes',
+      'allowCheckInBeforeMinutes',
+      'allowCheckOutAfterMinutes',
+      'isActive',
+    ];
 
-const updateShift = async (req, res, next) => {
-  try {
-    const shift = await Shift.findById(req.params.id);
-    if (!shift) return errorResponse(res, 'Không tìm thấy ca làm', 404);
-    const oldValue = shift.toObject();
-    Object.assign(shift, req.body);
+    for (const field of allowed) {
+      if (req.body[field] !== undefined) {
+        shift[field] = req.body[field];
+      }
+    }
+
     await shift.save();
-    await logAction({ userId: req.user.id, role: req.user.role, action: 'UPDATE', resource: 'Shift', resourceId: shift._id, oldValue, newValue: req.body, req });
-    return successResponse(res, shift, 'Cập nhật ca làm thành công');
-  } catch (error) { next(error); }
+    return successResponse(res, { shift }, 'Cập nhật ca làm thành công');
+  } catch (error) {
+    return errorResponse(res, 'Cập nhật ca làm thất bại', 500, error.message);
+  }
 };
 
-const deleteShift = async (req, res, next) => {
+export const deleteShift = async (req, res) => {
   try {
     const shift = await Shift.findById(req.params.id);
-    if (!shift) return errorResponse(res, 'Không tìm thấy ca làm', 404);
+    if (!shift) {
+      return errorResponse(res, 'Không tìm thấy ca làm', 404, 'Shift not found');
+    }
+
     shift.isActive = false;
     await shift.save();
-    await logAction({ userId: req.user.id, role: req.user.role, action: 'DELETE', resource: 'Shift', resourceId: shift._id, req });
-    return successResponse(res, null, 'Đã vô hiệu hóa ca làm');
-  } catch (error) { next(error); }
-};
 
-export {  getShifts, getShiftById, createShift, updateShift, deleteShift  };
+    return successResponse(res, { shift }, 'Đã vô hiệu hóa ca làm');
+  } catch (error) {
+    return errorResponse(res, 'Vô hiệu hóa ca làm thất bại', 500, error.message);
+  }
+};

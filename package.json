@@ -7,7 +7,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed": "node seeds/adminSeed.js"
+    "seed": "node seeds/adminSeed.js",
+    "seed:branch": "node seeds/branchSeed.js",
+    "test:phase2": "node scripts/testPhase2Flow.js",
+    "seed:shift": "node seeds/shiftSeed.js",
+    "test:phase3": "node scripts/testPhase3AttendanceFlow.js"
   },
   "keywords": ["hr", "attendance", "payroll", "revenue", "multi-branch"],
   "author": "",

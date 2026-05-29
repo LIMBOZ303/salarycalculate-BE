@@ -6,11 +6,11 @@ import rateLimit from 'express-rate-limit';
 import config from './config/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
-import adminRoutes from './routes/admin.js';
-import employeeRoutes from './routes/employee.js';
-import branchRoutes from './routes/branch.js';
-import shiftRoutes from './routes/shift.js';
-import attendanceRoutes from './routes/attendance.js';
+import adminUserRoutes from './routes/adminUserRoutes.js';
+import employeeRoutes from './routes/employeeRoutes.js';
+import branchRoutes from './routes/branchRoutes.js';
+import shiftRoutes from './routes/shiftRoutes.js';
+import attendanceRoutes from './routes/attendanceRoutes.js';
 import revenueRoutes from './routes/revenue.js';
 import payrollRoutes from './routes/payroll.js';
 import reportRoutes from './routes/report.js';
@@ -55,7 +55,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', adminUserRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/shifts', shiftRoutes);

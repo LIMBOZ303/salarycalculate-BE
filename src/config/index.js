@@ -10,5 +10,7 @@ export default {
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 900000,
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX, 10) || 300,
-  authRateLimitMax: parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10) || 20,
+  authRateLimitMax:
+    parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10) ||
+    (process.env.NODE_ENV === 'development' ? 500 : 20),
 };

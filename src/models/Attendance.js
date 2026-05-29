@@ -23,10 +23,9 @@ const editHistorySchema = new mongoose.Schema(
   {
     editedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     editedAt: { type: Date, default: Date.now },
-    field: { type: String },
+    reason: { type: String },
     oldValue: { type: mongoose.Schema.Types.Mixed },
     newValue: { type: mongoose.Schema.Types.Mixed },
-    reason: { type: String },
   },
   { _id: false }
 );
@@ -57,91 +56,42 @@ const attendanceSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    checkInTime: {
-      type: Date,
-      default: null,
-    },
-    checkOutTime: {
-      type: Date,
-      default: null,
-    },
-    breakMinutes: {
-      type: Number,
-      default: 0,
-    },
-    totalHours: {
-      type: Number,
-      default: 0,
-    },
-    lateMinutes: {
-      type: Number,
-      default: 0,
-    },
+    checkInTime: { type: Date, default: null },
+    checkOutTime: { type: Date, default: null },
+    breakMinutes: { type: Number, default: 0 },
+    totalHours: { type: Number, default: 0 },
+    lateMinutes: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ['checked_in', 'checked_out', 'absent', 'on_leave', 'holiday'],
-      default: 'checked_in',
+      enum: [
+        'not_checked_in',
+        'checked_in',
+        'late',
+        'completed',
+        'missing_checkout',
+        'absent',
+        'leave',
+        'edited',
+      ],
+      default: 'not_checked_in',
     },
-    checkInLocation: {
-      type: locationSchema,
-      default: null,
-    },
-    checkOutLocation: {
-      type: locationSchema,
-      default: null,
-    },
-    deviceInfo: {
-      type: deviceInfoSchema,
-      default: null,
-    },
-    checkInSelfieUrl: {
-      type: String,
-      default: null,
-    },
-    checkOutSelfieUrl: {
-      type: String,
-      default: null,
-    },
-    qrCodeId: {
-      type: String,
-      default: null,
-    },
-    isSuspicious: {
-      type: Boolean,
-      default: false,
-    },
-    suspiciousReasons: {
-      type: [String],
-      default: [],
-    },
-    requestEditStatus: {
-      type: String,
-      enum: ['none', 'pending', 'approved', 'rejected'],
-      default: 'none',
-    },
-    requestEditReason: {
-      type: String,
-      default: null,
-    },
-    editHistory: {
-      type: [editHistorySchema],
-      default: [],
-    },
-    isLocked: {
-      type: Boolean,
-      default: false,
-    },
-    ipAddress: {
-      type: String,
-      default: null,
-    },
+    checkInLocation: { type: locationSchema, default: null },
+    checkOutLocation: { type: locationSchema, default: null },
+    deviceInfo: { type: deviceInfoSchema, default: null },
+    checkInSelfieUrl: { type: String, default: null },
+    checkOutSelfieUrl: { type: String, default: null },
+    qrCodeId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    isSuspicious: { type: Boolean, default: false },
+    suspiciousReasons: { type: [String], default: [] },
+    requestEditStatus: { type: String, default: null },
+    requestEditReason: { type: String, default: null },
+    editHistory: { type: [editHistorySchema], default: [] },
+    isLocked: { type: Boolean, default: false },
+    note: { type: String, default: null },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Compound index: one attendance per employee per day
 attendanceSchema.index({ employeeId: 1, date: 1 }, { unique: true });
 attendanceSchema.index({ branchId: 1, date: 1 });
 attendanceSchema.index({ userId: 1, date: 1 });
