@@ -11,7 +11,8 @@
     "seed:branch": "node seeds/branchSeed.js",
     "test:phase2": "node scripts/testPhase2Flow.js",
     "seed:shift": "node seeds/shiftSeed.js",
-    "test:phase3": "node scripts/testPhase3AttendanceFlow.js"
+    "test:phase3": "node scripts/testPhase3AttendanceFlow.js",
+    "test:phase4": "node scripts/testPhase4RevenueFlow.js"
   },
   "keywords": ["hr", "attendance", "payroll", "revenue", "multi-branch"],
   "author": "",

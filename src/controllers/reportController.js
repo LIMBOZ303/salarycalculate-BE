@@ -5,7 +5,8 @@ import Attendance from '../models/Attendance.js';
 import Revenue from '../models/Revenue.js';
 import Payroll from '../models/Payroll.js';
 import User from '../models/User.js';
-import {  successResponse, errorResponse  } from '../utils/response.js';
+import { successResponse, errorResponse } from '../utils/response.js';
+import { getMonthRange, getQuarterRange, getYearRange } from '../utils/dateRange.js';
 
 const getDashboard = async (req, res, next) => {
   try {
@@ -58,10 +59,9 @@ const getMonthlyReport = async (req, res, next) => {
     const m = parseInt(req.query.month) || new Date().getMonth() + 1;
     const y = parseInt(req.query.year) || new Date().getFullYear();
     const { branchId } = req.query;
-    const startDate = new Date(y, m - 1, 1);
-    const endDate = new Date(y, m, 0, 23, 59, 59);
 
-    const revenueMatch = { month: m, year: y };
+    const { startDate, endDate } = getMonthRange(m, y);
+    const revenueMatch = { date: { $gte: startDate, $lte: endDate } };
     if (branchId) revenueMatch.branchId = mongoose.Types.ObjectId.createFromHexString(branchId);
     const revByBranch = await Revenue.aggregate([{ $match: revenueMatch }, { $group: { _id: '$branchId', total: { $sum: '$amount' } } }, { $lookup: { from: 'branches', localField: '_id', foreignField: '_id', as: 'branch' } }, { $unwind: { path: '$branch', preserveNullAndEmptyArrays: true } }]);
 
@@ -78,9 +78,10 @@ const getQuarterlyReport = async (req, res, next) => {
     const q = parseInt(req.query.quarter) || Math.ceil((new Date().getMonth() + 1) / 3);
     const y = parseInt(req.query.year) || new Date().getFullYear();
     const { branchId } = req.query;
-    const match = { quarter: q, year: y };
+    const { startDate, endDate } = getQuarterRange(q, y);
+    const match = { date: { $gte: startDate, $lte: endDate } };
     if (branchId) match.branchId = mongoose.Types.ObjectId.createFromHexString(branchId);
-    const revenue = await Revenue.aggregate([{ $match: match }, { $group: { _id: { month: '$month' }, total: { $sum: '$amount' } } }, { $sort: { '_id.month': 1 } }]);
+    const revenue = await Revenue.aggregate([{ $match: match }, { $group: { _id: { month: { $month: '$date' } }, total: { $sum: '$amount' } } }, { $sort: { '_id.month': 1 } }]);
     return successResponse(res, { quarter: q, year: y, revenue });
   } catch (error) { next(error); }
 };
@@ -89,9 +90,10 @@ const getYearlyReport = async (req, res, next) => {
   try {
     const y = parseInt(req.query.year) || new Date().getFullYear();
     const { branchId } = req.query;
-    const match = { year: y };
+    const { startDate, endDate } = getYearRange(y);
+    const match = { date: { $gte: startDate, $lte: endDate } };
     if (branchId) match.branchId = mongoose.Types.ObjectId.createFromHexString(branchId);
-    const revenue = await Revenue.aggregate([{ $match: match }, { $group: { _id: { month: '$month' }, total: { $sum: '$amount' } } }, { $sort: { '_id.month': 1 } }]);
+    const revenue = await Revenue.aggregate([{ $match: match }, { $group: { _id: { month: { $month: '$date' } }, total: { $sum: '$amount' } } }, { $sort: { '_id.month': 1 } }]);
     const grandTotal = revenue.reduce((s, r) => s + r.total, 0);
     return successResponse(res, { year: y, revenue, grandTotal });
   } catch (error) { next(error); }

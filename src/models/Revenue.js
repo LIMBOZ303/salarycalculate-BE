@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { normalizeDateOnly } from '../utils/dateRange.js';
 
 const revenueSchema = new mongoose.Schema(
   {
@@ -11,26 +12,30 @@ const revenueSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Ngày là bắt buộc'],
     },
-    month: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 12,
-    },
-    quarter: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 4,
-    },
-    year: {
-      type: Number,
-      required: true,
-    },
     amount: {
       type: Number,
       required: [true, 'Số tiền là bắt buộc'],
       min: [0, 'Số tiền không được âm'],
+    },
+    cashAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Tiền mặt không được âm'],
+    },
+    transferAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Chuyển khoản không được âm'],
+    },
+    otherAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Khoản khác không được âm'],
+    },
+    orderCount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Số đơn không được âm'],
     },
     note: {
       type: String,
@@ -39,12 +44,17 @@ const revenueSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
     },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'submitted', 'confirmed'],
+      default: 'submitted',
     },
   },
   {
@@ -52,19 +62,12 @@ const revenueSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-revenueSchema.index({ branchId: 1, date: 1 });
-revenueSchema.index({ branchId: 1, month: 1, year: 1 });
-revenueSchema.index({ branchId: 1, quarter: 1, year: 1 });
-revenueSchema.index({ year: 1 });
+revenueSchema.index({ branchId: 1, date: 1 }, { unique: true });
+revenueSchema.index({ date: 1 });
 
-// Auto-calculate month, quarter, year from date
 revenueSchema.pre('save', function (next) {
   if (this.date) {
-    const d = new Date(this.date);
-    this.month = d.getMonth() + 1;
-    this.year = d.getFullYear();
-    this.quarter = Math.ceil(this.month / 3);
+    this.date = normalizeDateOnly(this.date);
   }
   next();
 });
